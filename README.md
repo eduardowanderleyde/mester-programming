@@ -9,17 +9,19 @@ Um sistema completo para monitoramento e análise de redes Wi-Fi Mesh, desenvolv
 
 ### Interface Web
 
-![Interface Web](videos/images/Captura%20de%20Tela%202025-04-30%20às%2023.57.10.png)
+![Interface Web](videos/images/interface.jpg)
 
 ### Monitoramento em Tempo Real
 
-![Monitoramento](videos/images/Captura%20de%20Tela%202025-04-30%20às%2023.57.18.png)
+![Monitoramento](videos/images/monitoramento.jpg)
 
 ### Vídeos de Demonstração
 
-- [Demonstração Completa](videos/Gravação%20de%20Tela%202025-04-30%20às%2023.57.22.mov)
-- [Teste de Performance](videos/upa.mov)
-- [Funcionamento do Sistema](videos/images/Gravação%20de%20Tela%202025-04-30%20às%2023.52.27.mov)
+Para ver os vídeos de demonstração, por favor acesse:
+
+- [Demonstração Completa](https://youtu.be/SEU_LINK_AQUI)
+- [Teste de Performance](https://youtu.be/SEU_LINK_AQUI)
+- [Funcionamento do Sistema](https://youtu.be/SEU_LINK_AQUI)
 
 ## 🚀 Funcionalidades
 
