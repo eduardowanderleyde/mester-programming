@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoramento Mesh</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.css" rel="stylesheet">
+  <style>
+    .card {
+      margin-bottom: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .signal-indicator {
+      height: 20px;
+      width: 100%;
+      background: linear-gradient(to right, #ff0000, #ffff00, #00ff00);
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    .signal-bar {
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 10px;
+    }
+
+    .status-badge {
+      font-size: 0.8em;
+      padding: 5px 10px;
+      border-radius: 15px;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container-fluid py-4">
+    <h1 class="text-center mb-4">Monitoramento da Rede Mesh</h1>
+
+    <div class="row">
+      <!-- Status da Rede -->
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Status da Rede</h5>
+          </div>
+          <div class="card-body">
+            <div id="wifi-status">
+              <p><strong>SSID:</strong> <span id="ssid">-</span></p>
+              <p><strong>BSSID:</strong> <span id="bssid">-</span></p>
+              <p><strong>Sinal:</strong> <span id="signal">-</span> dBm</p>
+              <div class="signal-indicator">
+                <div id="signal-bar" class="signal-bar"></div>
+              </div>
+              <p><strong>Latência:</strong> <span id="latency">-</span> ms</p>
+              <p><strong>Banda:</strong> <span id="bandwidth">-</span> Mbps</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Diagnóstico -->
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Diagnóstico</h5>
+          </div>
+          <div class="card-body">
+            <div id="diagnostics">
+              <h6>Problemas Detectados:</h6>
+              <div id="problems-list"></div>
+              <h6 class="mt-3">Recomendações:</h6>
+              <div id="recommendations-list"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bateria -->
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Bateria</h5>
+          </div>
+          <div class="card-body">
+            <div id="battery-status">
+              <p><strong>Nível:</strong> <span id="battery-level">-</span>%</p>
+              <div class="progress">
+                <div id="battery-bar" class="progress-bar" role="progressbar" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Histórico de Sinal</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="signal-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="card-title mb-0">Histórico de Latência</h5>
+          </div>
+          <div class="card-body">
+            <div class="chart-container">
+              <canvas id="latency-chart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+  <script>
+    const socket = io();
+    let signalChart, latencyChart;
+    let signalData = [], latencyData = [];
+    const maxDataPoints = 20;
+
+    // Inicializar gráficos
+    function initCharts() {
+      const signalCtx = document.getElementById('signal-chart').getContext('2d');
+      const latencyCtx = document.getElementById('latency-chart').getContext('2d');
+
+      signalChart = new Chart(signalCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Sinal (dBm)',
+            data: [],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      latencyChart = new Chart(latencyCtx, {
+        type: 'line',
+        data: {
+          labels: [],
+          datasets: [{
+            label: 'Latência (ms)',
+            data: [],
+            borderColor: 'rgb(255, 99, 132)',
+            tension: 0.1
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+    }
+
+    // Atualizar dados em tempo real
+    socket.on('update_data', function (data) {
+      // Atualizar status da rede
+      if (data.wifi && data.wifi.length > 0) {
+        document.getElementById('ssid').textContent = data.wifi[0].SSID;
+        document.getElementById('bssid').textContent = data.wifi[0].BSSID;
+        document.getElementById('signal').textContent = data.wifi[0]['Signal Level (dBm)'];
+
+        // Atualizar barra de sinal
+        const signal = data.wifi[0]['Signal Level (dBm)'];
+        const signalPercent = Math.min(100, Math.max(0, (signal + 100) * 2));
+        document.getElementById('signal-bar').style.width = signalPercent + '%';
+      }
+
+      if (data.latency) {
+        document.getElementById('latency').textContent = data.latency.latency_ms;
+      }
+
+      if (data.bandwidth) {
+        document.getElementById('bandwidth').textContent =
+          data.bandwidth.bandwidth_mbps ? data.bandwidth.bandwidth_mbps.toFixed(2) : '-';
+      }
+
+      // Atualizar diagnóstico
+      if (data.diagnostics) {
+        const problemsList = document.getElementById('problems-list');
+        const recommendationsList = document.getElementById('recommendations-list');
+
+        problemsList.innerHTML = '';
+        recommendationsList.innerHTML = '';
+
+        data.diagnostics.problems.forEach(problem => {
+          const badgeClass = problem.type === 'CRITICAL' ? 'bg-danger' : 'bg-warning';
+          problemsList.innerHTML += `
+                        <div class="alert ${badgeClass}">
+                            <strong>${problem.type}:</strong> ${problem.description}
+                            <br><small>${problem.recommendation}</small>
+                        </div>
+                    `;
+        });
+
+        data.diagnostics.recommendations.forEach(rec => {
+          recommendationsList.innerHTML += `
+                        <div class="alert alert-info">
+                            <strong>${rec.action}:</strong>
+                            <ul>
+                                ${rec.steps.map(step => `<li>${step}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+        });
+      }
+
+      // Atualizar gráficos
+      const timestamp = new Date().toLocaleTimeString();
+
+      signalData.push(data.wifi[0]['Signal Level (dBm)']);
+      latencyData.push(data.latency.latency_ms);
+
+      if (signalData.length > maxDataPoints) {
+        signalData.shift();
+        latencyData.shift();
+      }
+
+      signalChart.data.labels = Array.from({ length: signalData.length }, (_, i) => '');
+      signalChart.data.datasets[0].data = signalData;
+      signalChart.update();
+
+      latencyChart.data.labels = Array.from({ length: latencyData.length }, (_, i) => '');
+      latencyChart.data.datasets[0].data = latencyData;
+      latencyChart.update();
+    });
+
+    // Inicializar quando a página carregar
+    window.onload = function () {
+      initCharts();
+    };
+  </script>
+</body>
+
+</html>
