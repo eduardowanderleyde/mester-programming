@@ -5,6 +5,22 @@
 
 Um sistema completo para monitoramento e análise de redes Wi-Fi Mesh, desenvolvido para Raspberry Pi. Este projeto permite coletar, analisar e visualizar dados importantes sobre a performance da rede mesh.
 
+## 🎥 Demonstração
+
+### Interface Web
+
+![Interface Web](videos/images/Captura%20de%20Tela%202025-04-30%20às%2023.57.10.png)
+
+### Monitoramento em Tempo Real
+
+![Monitoramento](videos/images/Captura%20de%20Tela%202025-04-30%20às%2023.57.18.png)
+
+### Vídeos de Demonstração
+
+- [Demonstração Completa](videos/Gravação%20de%20Tela%202025-04-30%20às%2023.57.22.mov)
+- [Teste de Performance](videos/upa.mov)
+- [Funcionamento do Sistema](videos/images/Gravação%20de%20Tela%202025-04-30%20às%2023.52.27.mov)
+
 ## 🚀 Funcionalidades
 
 - 📡 Monitoramento de força do sinal Wi-Fi
